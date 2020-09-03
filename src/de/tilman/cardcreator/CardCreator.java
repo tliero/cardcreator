@@ -5,7 +5,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
-import java.util.Arrays;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -61,7 +62,7 @@ public class CardCreator {
 	private ClientCredentialsRequest clientCredentialsRequest;
 	private Image spotifyLogo;
 
-	public CardCreator(List<String> links) {
+	public CardCreator() {
 		
 		List<Card> cards;
 		
@@ -71,9 +72,18 @@ public class CardCreator {
 			properties = new Properties();
 			properties.load(reader);
 			
+			List<String> links = Files.readAllLines(new File(properties.getProperty("cardsFile")).toPath(), Charset.defaultCharset());
+			
+			for (int i = links.size()-1; i >= 0; i--)
+				if (links.get(i).startsWith("//") || links.get(i).length() == 0)
+					links.remove(links.get(i));
+				else
+					if (links.get(i).startsWith("spotify:") && links.get(i).indexOf(' ') > 0)
+						links.set(i, links.get(i).substring(0, links.get(i).indexOf(' ')));
+			log.info("Read " + links.size() + " links from " + properties.getProperty("cardsFile"));
+			
 			spotifyApi = new SpotifyApi.Builder().setClientId(properties.getProperty("spotifyClientId")).setClientSecret(properties.getProperty("spotifyClientSecret")).build();
 			clientCredentialsRequest = spotifyApi.clientCredentials().build();
-			
 			final ClientCredentials clientCredentials = clientCredentialsRequest.execute();
 
 			// Set access token for further "spotifyApi" object usage
@@ -316,24 +326,7 @@ public class CardCreator {
 	
 
 	public static void main(String[] args) throws Exception {
-		
-		List<String> links = Arrays.asList(
-				
-				// A QR test card with long text and unicode characters
-				"https://ih1.redbubble.net/image.859117621.1102/ra,unisex_tshirt,x2200,101010:01c5ca27c6,front-c,267,146,1000,1000-bg,f8f8f8.u6.jpg|German: ÄäÖöÜüß, Russian: ЯБГДЖЙ, Polish: ŁĄŻĘĆŃŚŹ, Japanese: Kanji: てすと   (te-su-to), Hankaku: ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃ",
-				
-				// Internet radio stream - the logo can be put as parameter, separated by a vertical line
-				"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Radio_Teddy_Logo.svg/1200px-Radio_Teddy_Logo.svg.png|http://streamtdy.ir-media-tec.com/live/mp3-128/web/play.mp3",
-				
-				// A folder on a network share. The creator will look for a file named "cover.jpg".
-				"NAS/share/Drachenreiter - Das Hörspiel",
-				
-				// Spotify
-				"spotify:album:0YSWLbCg5SpxAb2VOON3mX", // Sing mit mir Kinderlieder
-				"spotify:album:7tfjSYq5aWFwKlYWRzmPMc" // Das kleine Gespenst
-				);
-		
-		new CardCreator(links);
+		new CardCreator();
 	}
 }
 
