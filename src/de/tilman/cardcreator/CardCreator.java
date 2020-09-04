@@ -72,7 +72,7 @@ public class CardCreator {
 			properties = new Properties();
 			properties.load(reader);
 			
-			List<String> links = Files.readAllLines(new File(properties.getProperty("cardsFile")).toPath(), Charset.defaultCharset());
+			List<String> links = Files.readAllLines(new File(properties.getProperty("cardsFile")).toPath(), Charset.forName("UTF-8"));
 			
 			for (int i = links.size()-1; i >= 0; i--)
 				if (links.get(i).startsWith("//") || links.get(i).length() == 0)

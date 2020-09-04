@@ -12,3 +12,4 @@ NAS/share/Drachenreiter - Das Hörspiel
 // for Spotify-URIs, everything after the first space is ignored 
 spotify:album:0YSWLbCg5SpxAb2VOON3mX Sing mit mir Kinderlieder
 spotify:album:7tfjSYq5aWFwKlYWRzmPMc Das kleine Gespenst
+spotify:album:1FAupt6dQ7w849zXeJd5JB Die Reisemaus in Dänemark
