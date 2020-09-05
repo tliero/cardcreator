@@ -44,11 +44,22 @@ public class CardCreator {
 	
 	private final static Logger log = LoggerFactory.getLogger(CardCreator.class);
 	
+	public float pageWidth = 297;
+	public float pageHeight = 210;
+	public int cardsPerPage = 6;
+	public float cardWidth = 40;
+	public float borderWidth = 1;
+	public float qrSize = 22;
+	public float topMargin = 11;
+	public float coverSize = 30;
+	public float artistPaddingTop = 5;
+	public float artistFontSize = 8;
+	public float titlePaddingTop = 3;
+	public float titleFontSize = 9;
+	public float titleMaxHeight = 22;
+
+	
 	public static final float mmUnit = 72f/25.4f; // see https://itextpdf.com/en/resources/faq/technical-support/itext-7/how-define-width-cell
-	public static final int cardsPerLine = 6;
-	public static final float cardWidth = 40;
-	public static final float pageWidth = 297;
-	public static final float borderWidth = 1;
 
 	public static final PdfNumber INVERTEDPORTRAIT = new PdfNumber(180);
 	public static final PdfNumber LANDSCAPE = new PdfNumber(90);
@@ -82,15 +93,31 @@ public class CardCreator {
 						links.set(i, links.get(i).substring(0, links.get(i).indexOf(' ')));
 			log.info("Read " + links.size() + " links from " + properties.getProperty("cardsFile"));
 			
-			spotifyApi = new SpotifyApi.Builder().setClientId(properties.getProperty("spotifyClientId")).setClientSecret(properties.getProperty("spotifyClientSecret")).build();
-			clientCredentialsRequest = spotifyApi.clientCredentials().build();
-			final ClientCredentials clientCredentials = clientCredentialsRequest.execute();
-
-			// Set access token for further "spotifyApi" object usage
-			String accessToken = clientCredentials.getAccessToken();
-			log.info(accessToken);
-			spotifyApi.setAccessToken(accessToken);
+			if (properties.getProperty("spotifyClientId") != null && properties.getProperty("spotifyClientId").length() > 0) {
+				spotifyApi = new SpotifyApi.Builder().setClientId(properties.getProperty("spotifyClientId")).setClientSecret(properties.getProperty("spotifyClientSecret")).build();
+				clientCredentialsRequest = spotifyApi.clientCredentials().build();
+				final ClientCredentials clientCredentials = clientCredentialsRequest.execute();
+				
+				// Set access token for further "spotifyApi" object usage
+				String accessToken = clientCredentials.getAccessToken();
+				log.info(accessToken);
+				spotifyApi.setAccessToken(accessToken);
+			}
 			
+			pageWidth = Integer.parseInt(properties.getProperty("pageWidth"));
+			pageHeight = Integer.parseInt(properties.getProperty("pageHeight"));
+			cardsPerPage = Integer.parseInt(properties.getProperty("cardsPerPage"));
+			cardWidth = Integer.parseInt(properties.getProperty("cardWidth"));
+			borderWidth = Integer.parseInt(properties.getProperty("borderWidth"));
+			qrSize = Integer.parseInt(properties.getProperty("qrSize"));
+			topMargin = Integer.parseInt(properties.getProperty("topMargin"));
+			coverSize = Integer.parseInt(properties.getProperty("coverSize"));
+			artistPaddingTop = Integer.parseInt(properties.getProperty("artistPaddingTop"));
+			artistFontSize = Integer.parseInt(properties.getProperty("artistFontSize"));
+			titlePaddingTop = Integer.parseInt(properties.getProperty("titlePaddingTop"));
+			titleFontSize = Integer.parseInt(properties.getProperty("titleFontSize"));
+			titleMaxHeight = Integer.parseInt(properties.getProperty("titleMaxHeight"));
+
 			cards = fetchCardData(links);
 			
 			// TODO check for folders in path
@@ -206,7 +233,7 @@ public class CardCreator {
 		List<Card> line = new LinkedList<Card>();
 		
 		for (Card card : cards) {
-			if (line.size() < cardsPerLine) {
+			if (line.size() < cardsPerPage) {
 				line.add(card);
 			}
 			else {
@@ -227,12 +254,12 @@ public class CardCreator {
 		pdfDoc.setDefaultPageSize(PageSize.A4.rotate());
 		Document doc = new Document(pdfDoc);
 		
-		float docMargin = (pageWidth - (cardWidth * cardsPerLine)) / 2 * mmUnit;
+		float docMargin = (pageWidth - (cardWidth * cardsPerPage)) / 2 * mmUnit;
 		doc.setMargins(0, docMargin, 0,  docMargin - borderWidth);  // leave space for the first border
 		
-		UnitValue[] colWidths = new UnitValue[cardsPerLine];
+		UnitValue[] colWidths = new UnitValue[cardsPerPage];
 		for (int i = 0; i < colWidths.length; i++)
-			colWidths[i] = new UnitValue(UnitValue.PERCENT, 100/cardsPerLine);
+			colWidths[i] = new UnitValue(UnitValue.PERCENT, 100/cardsPerPage);
 		
 		for (List<Card> line : lines) {
 			
@@ -268,8 +295,8 @@ public class CardCreator {
 					}
 					
 					Image qrcode = new Image(card.qrcode.createFormXObject(pdfDoc));
-					qrcode.setWidth(22 * mmUnit); // Cannot set margin to 0 on QR codes and they grow with the length of the content. This is an approximation.
-					p.setPaddingTop(22 * mmUnit - qrcode.getWidth().getValue() / 2); // mid point of QR code is 22 mm from top border
+					qrcode.setWidth(qrSize * mmUnit); // Cannot set margin to 0 on QR codes and they grow with the length of the content. This is an approximation.
+					p.setPaddingTop(topMargin * mmUnit); // mid point of QR code is 22 mm from top border
 					p.add(qrcode);
 					cell.add(p);
 					cell2.add(p);
@@ -279,30 +306,30 @@ public class CardCreator {
 					p.setPaddingTop(5 * mmUnit);
 					if (card.cover != null) {
 						Image cover = card.cover;
-						cover.setWidth(30 * mmUnit);
+						cover.setWidth(coverSize * mmUnit);
 						p.add(cover);
 					}
 					else {
-						p.setPaddingBottom(30 * mmUnit);
+						p.setPaddingBottom(coverSize * mmUnit);
 					}
 					cell.add(p);
 					cell2.add(p);
 					
 					p = new Paragraph();
 					p.setTextAlignment(TextAlignment.CENTER);
-					p.setPaddingTop(5 * mmUnit);
-					p.setFontSize(8f);
+					p.setPaddingTop(artistPaddingTop * mmUnit);
+					p.setFontSize(artistFontSize);
 					p.add(card.artist);
 					cell.add(p);
 					cell2.add(p);
 					
 					p = new Paragraph();
 					p.setTextAlignment(TextAlignment.CENTER);
-					p.setPaddingTop(3 * mmUnit);
-					p.setFontSize(9f);
+					p.setPaddingTop(titlePaddingTop * mmUnit);
+					p.setFontSize(titleFontSize);
 					p.setBold();
 					p.add(card.title);
-					p.setMaxHeight(22 * mmUnit);
+					p.setMaxHeight(titleMaxHeight * mmUnit);
 					cell.add(p);
 					cell2.add(p);
 				}
@@ -312,12 +339,12 @@ public class CardCreator {
 				table2.addCell(cell2);
 			}
 			
-			table.setMinHeight(105 * mmUnit);
-			table.setMaxHeight(105 * mmUnit);
+			table.setMinHeight(pageHeight/2 * mmUnit);
+			table.setMaxHeight(pageHeight/2 * mmUnit);
 			doc.add(table);
 			
-			table2.setMinHeight(105 * mmUnit);
-			table2.setMaxHeight(105 * mmUnit);
+			table2.setMinHeight(pageHeight/2 * mmUnit);
+			table2.setMaxHeight(pageHeight/2 * mmUnit);
 			doc.add(table2);
 		}
 
