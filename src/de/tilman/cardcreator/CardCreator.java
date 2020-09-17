@@ -21,6 +21,7 @@ import com.itextpdf.barcodes.qrcode.EncodeHintType;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfNumber;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -251,7 +252,7 @@ public class CardCreator {
 
 	protected void createFoldingPdf(String dest, List<List<Card>> lines) throws Exception {
 		PdfDocument pdfDoc = new PdfDocument(new PdfWriter(dest));
-		pdfDoc.setDefaultPageSize(PageSize.A4.rotate());
+		pdfDoc.setDefaultPageSize(new PageSize(new Rectangle(pageWidth * mmUnit, pageHeight * mmUnit)));
 		Document doc = new Document(pdfDoc);
 		
 		float docMargin = (pageWidth - (cardWidth * cardsPerPage)) / 2 * mmUnit;
